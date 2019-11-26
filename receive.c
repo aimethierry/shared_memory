@@ -1,4 +1,3 @@
-
 #include<stdio.h>
 #include<sys/ipc.h>
 #include<sys/shm.h>
@@ -10,7 +9,6 @@
 #define SHSIZE 100
 #include <unistd.h>
 
-int v = 5;
 int main(int argc, char * argv[])
 {
 	int shmid;
@@ -31,14 +29,11 @@ int main(int argc, char * argv[])
 		perror ("shmat \n");
 		exit(1);
 	}
-	
-	if(s)
 	for(s = shm; *s != 0 ; s++)
 	{
 		printf("%c", *s);
 	}
 	printf("\n");
-	
-	*shm = '*';
+	*shm = 'A';
 	return 0;
 }
