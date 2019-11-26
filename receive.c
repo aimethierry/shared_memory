@@ -14,42 +14,50 @@
 
 char * shm;
 char * s;
+int shmid = -1;
 
-int openfile(char * name);
 
-int openfile(char * name)
+int openfile(int mykey, int size);
+
+int openfile(int mykey, int size)
 {
-	int shmid = -1;
-	int size;
-	shmid = shm_open (name, O_RDWR, 0600);
-	if(shmid == -1){
-		perror("error when opening \n");
-	}
-	size = lseek(shmid, 0, SEEK_END);
-	shm = (char *) mmap (NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, shmid, 0);
 	
-	if (shm == MAP_FAILED)
+	key_t key;
+	key = mykey;
+	
+	shmid = shmget(key, size, 0666);
+	
+	if(shmid < 0)
 	{
-        perror ("ERROR: mmap() failed");
-    }
+		perror ("ERROR: shm_open() failed \n");
+		exit(1);
+	}
+	shm = shmat(shmid, NULL, 0);
+	if(shm == (char *) -1)
+	{
+		perror ("shmat \n");
+		exit(1);
+	}
 	return 0;
 }
 
 
 int main(int argc, char * argv[])
 {
-	char name[80];
+	int key;
+	int size;
+	printf("enter a location to read \n");
+	scanf("%d", &key);
 	
-	printf("enter a file u want to open \n");
-	fgets(name, sizeof (name), stdin);
-	openfile(name);
+	printf("enter size  \n");
+	scanf("%d", &size);
 	
-	/*
+	openfile(key, size);
 	for(s = shm; *s != 0 ; s++)
 	{
 		printf("%c", *s);
 	}
-	*shm = 'A';*/
-	printf("address of the file %d", &shm);
+	printf("\n");
+	*shm = 'A';
 	return 0;
 }

@@ -5,87 +5,70 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
 
-#include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/fcntl.h>
-
-
-//#define SHSIZE 100
-int create(char *name , int size);
-int dele_file(char * s);
 char * shm;
 char * s;
+int shmid = -1;
 
-int dele_file(char * s)
-{
-    int len;
-    len = strlen (s);
-    if (s [len - 1] == '\n')
-    {
-        s [len - 1] = '\0';
-    }
-    return 0;
-}
+int create(int mykey, int size);
 
-int create(char * name, int SHSIZE)
+int create(int mykey, int size)
 {
-	int shmid = -1;
-	int cmpr;
-   	shmid = shm_open(name, O_CREAT | O_EXCL | O_RDWR, 0600);
+	
+	key_t key;
+	key = mykey;
+	
+	//shmid = shmget(key, SHSIZE,  0666| IPC_CREAT); shmget(key, SHSIZE , 0644|IPC_CREAT); 
+   	shmid = shmget(key, size, IPC_CREAT | 0666);
+	//shmid = shm_open(shm_name, O_CREAT | O_EXCL | O_RDWR, 0600);
 	if(shmid == -1)
 	{
 		perror ("ERROR: shm_open() failed \n");
 		exit(1);
 	}
-	
-	cmpr =  ftruncate(shmid, SHSIZE);
-	shm = (char *) mmap (NULL, SHSIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shmid, 0);
-	
-	
-	if(shm == MAP_FAILED)
+	shm = shmat(shmid, NULL, 0);
+	if(shm == (char *) -1)
 	{
 		perror ("shmat \n");
 		exit(1);
 	}
-	memcpy(shm, "hello world", 11); 
+	memcpy(shm, "hello world", 11);
+	printf("key is %d and size is %d \n", mykey, size);
 	return 0;
 }
 
 int main(int argc, char * argv[])
-{	
-	/* int tryid = -1;
-	key_t key;
-	key = 9976;
-    memcpy(shm, "hello world", 11);
+{
+	
+	int key;
+	int size;
+	printf("enter the key \n");
+	scanf("%d", &key);
+	printf("enter the size \n");
+	scanf("%d", &size);
+	create(key, size);
 	s = shm;
-	 */
-	 
-	char name[80];
-	int size = 0;
 	
 	int val=1;
+	
+	//deleting the file in the memory
 	while(val)
 	{
-		printf("Enter a name to create a file \n");
-		fgets(name, sizeof (name), stdin);
-        dele_file(name);
-        printf ("Enter size: ");
-        scanf("%d \n", &size);
-		create(name, size);
-        s = shm;
-        for(s = shm; *s != 0 ; s++)
-		{
-		printf("%c", *s);
-		}
-        if(*shm == 'A')
-        {
-			printf("stop the program \n");
-			val = 0;
+		sleep(1);
+		if(*shm == 'A')
+		{   
+			int remove = shmctl(shmid, IPC_RMID, NULL);
+			if(remove == -1)
+			{
+				perror("there was an error in removing \n");
+			} 
+			val =0;
 		}
 	}	
+	
 	return 0;
 }
